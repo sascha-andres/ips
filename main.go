@@ -111,6 +111,9 @@ func getIpAddresses() (ips, error) {
 			ips = append(ips, publicIp)
 		}
 	}
+	if !all && public {
+		return ips, nil
+	}
 	interfaces, err := net.Interfaces()
 	if err != nil {
 		return ips, err
