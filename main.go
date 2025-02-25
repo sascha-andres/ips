@@ -78,7 +78,7 @@ func main() {
 // run retrieves IP addresses, logs errors if retrieval fails, and outputs the addresses in plain text or JSON format.
 func run(logger *slog.Logger) error {
 	// get ips
-	ips, err := getIpAddresses()
+	ips, err := getIpAddresses(logger)
 	if err != nil {
 		logger.Error("could not get ip addresses", "err", err)
 		return err
@@ -86,6 +86,7 @@ func run(logger *slog.Logger) error {
 	if jsonOutput {
 		data, err := json.Marshal(ips)
 		if err != nil {
+			logger.Error("could not marshal to json", "err", err)
 			return err
 		}
 		fmt.Println(string(data))
@@ -100,11 +101,12 @@ func run(logger *slog.Logger) error {
 // getIpAddresses retrieves a list of IP addresses for all available network interfaces.
 // If the public flag is set, it includes the public IP address.
 // Returns a collection of IP instances and an error if any occurs during retrieval.
-func getIpAddresses() (ips, error) {
+func getIpAddresses(logger *slog.Logger) (ips, error) {
 	ips := make(ips, 0)
 	if public || all {
 		publicIp, err := getPublicIp()
 		if err != nil {
+			logger.Error("could not get public ip", "err", err)
 			return ips, err
 		}
 		if publicIp != nil {
@@ -116,11 +118,13 @@ func getIpAddresses() (ips, error) {
 	}
 	interfaces, err := net.Interfaces()
 	if err != nil {
+		logger.Error("could not get interfaces", "err", err)
 		return ips, err
 	}
 	for _, i := range interfaces {
 		addrs, err := i.Addrs()
 		if err != nil {
+			logger.Error("could not get addresses", "err", err, "interface", i.Name)
 			return ips, err
 		}
 		if addrs == nil || len(addrs) == 0 {
