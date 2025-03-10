@@ -104,13 +104,21 @@ func run(logger *slog.Logger) error {
 func getIpAddresses(logger *slog.Logger) (ips, error) {
 	ips := make(ips, 0)
 	if public || all {
-		publicIp, err := getPublicIp()
+		publicIpv4, err := getPublicIp("ipv4")
 		if err != nil {
 			logger.Error("could not get public ip", "err", err)
 			return ips, err
 		}
-		if publicIp != nil {
-			ips = append(ips, publicIp)
+		if publicIpv4 != nil {
+			ips = append(ips, publicIpv4)
+		}
+		publicIpv6, err := getPublicIp("ipv6")
+		if err != nil {
+			logger.Error("could not get public ip", "err", err)
+			return ips, err
+		}
+		if publicIpv6 != nil {
+			ips = append(ips, publicIpv6)
 		}
 	}
 	if !all && public {
@@ -142,9 +150,9 @@ func getIpAddresses(logger *slog.Logger) (ips, error) {
 
 // getPublicIp retrieves the public IP address of the system using an external service and returns it as an ip instance.
 // Returns an error if the request fails or the response can't be processed.
-func getPublicIp() (*ip, error) {
+func getPublicIp(t string) (*ip, error) {
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", "https://wtfismyip.com/text", nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://%s.wtfismyip.com/text", t), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -163,6 +171,6 @@ func getPublicIp() (*ip, error) {
 
 	return &ip{
 		Address:   strings.TrimSpace(string(body)),
-		Interface: "public",
+		Interface: fmt.Sprintf("public %s", strings.ToUpper(t)),
 	}, nil
 }
